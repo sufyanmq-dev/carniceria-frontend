@@ -8,30 +8,29 @@ import {
   Text,
 } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
-import { LuClipboardList, LuEuro, LuClock } from "react-icons/lu";
-import { useOrders } from "@/hooks/useOrders";
-import { useAuth } from "@/hooks/useAuth";
-import { fmtPrice, fmtDate, fmtOrderId } from "@/utils/formatters";
+import { LuClipboardList, LuClock, LuShoppingCart } from "react-icons/lu";
 import PageHeader from "@/components/ui/PageHeader";
 import StatCard from "@/components/ui/StatCard";
 import StatusBadge from "@/components/ui/StatusBadge";
 import EmptyState from "@/components/ui/EmptyState";
+import { useOrders } from "@/hooks/useOrders";
+import { fmtPrice, fmtDate, fmtOrderId } from "@/utils/formatters";
 
-export default function DashboardPage() {
-  const { user } = useAuth();
+export default function EmployeeDashboardPage() {
   const navigate = useNavigate();
   const { orders, loading } = useOrders();
 
-  // Resumen de datos
-  const totalSpent = orders.reduce((sum, o) => sum + Number(o.total), 0);
-  const lastOrder = orders[0];
-  const recentOrders = orders.slice(0, 5);
+  // Filtrados rápidos
+  const pending = orders.filter((o) => o.status === "pendiente");
+  const inProgress = orders.filter((o) => o.status === "en_preparacion");
+  const recent = orders.slice(0, 6);
 
   return (
     <Box>
+      {/* Header con acción */}
       <PageHeader
-        title={`Hola, ${user?.username} 👋`}
-        subtitle="Resumen de tu actividad reciente"
+        title="Panel de empleado"
+        subtitle="Resumen de actividad y pedidos pendientes"
         action={
           <Button
             size="sm"
@@ -39,7 +38,7 @@ export default function DashboardPage() {
             color="white"
             _hover={{ bg: "brand.600" }}
             fontWeight={600}
-            onClick={() => navigate("/cliente/nuevo")}
+            onClick={() => navigate("/empleado/nuevo-pedido")}
           >
             + Nuevo pedido
           </Button>
@@ -52,41 +51,35 @@ export default function DashboardPage() {
         gap={4}
         mb={8}
       >
-        <Skeleton isLoaded={!loading} borderRadius="lg">
+        <Skeleton loading={loading} borderRadius="lg">
           <StatCard
-            label="Total gastado"
-            value={fmtPrice(totalSpent)}
-            subtext="todos tus pedidos"
-            icon={LuEuro}
-          />
-        </Skeleton>
-
-        <Skeleton isLoaded={!loading} borderRadius="lg">
-          <StatCard
-            label="Pedidos"
+            label="Total pedidos"
             value={orders.length}
-            subtext="realizados"
+            subtext="en el sistema"
             icon={LuClipboardList}
           />
         </Skeleton>
-
-        <Skeleton isLoaded={!loading} borderRadius="lg">
+        <Skeleton loading={loading} borderRadius="lg">
           <StatCard
-            label="Último pedido"
-            value={lastOrder ? fmtDate(lastOrder.created_at) : "—"}
-            subtext={
-              lastOrder ? (
-                <StatusBadge status={lastOrder.status} />
-              ) : (
-                "Sin pedidos aún"
-              )
-            }
+            label="Pendientes"
+            value={pending.length}
+            subtext="esperando preparación"
             icon={LuClock}
+            iconColor="yellow.500"
+          />
+        </Skeleton>
+        <Skeleton loading={loading} borderRadius="lg">
+          <StatCard
+            label="En preparación"
+            value={inProgress.length}
+            subtext="en curso ahora"
+            icon={LuShoppingCart}
+            iconColor="blue.500"
           />
         </Skeleton>
       </Grid>
 
-      {/* Últimos pedidos */}
+      {/* Pedidos recientes */}
       <Box
         bg="bg.surface"
         border="1px solid"
@@ -94,6 +87,7 @@ export default function DashboardPage() {
         borderRadius="lg"
         overflow="hidden"
       >
+        {/* Encabezado */}
         <Flex
           justify="space-between"
           align="center"
@@ -103,15 +97,14 @@ export default function DashboardPage() {
           borderColor="border.default"
         >
           <Text fontWeight={600} fontSize="sm" color="text.primary">
-            Últimos pedidos
+            Pedidos recientes
           </Text>
-
           <Button
             variant="ghost"
             size="xs"
             color="brand.text"
             fontWeight={600}
-            onClick={() => navigate("/cliente/pedidos")}
+            onClick={() => navigate("/empleado/pedidos")}
           >
             Ver todos →
           </Button>
@@ -119,52 +112,43 @@ export default function DashboardPage() {
 
         {loading ? (
           <Box p={5}>
-            <Skeleton h="120px" borderRadius="md" />
+            <Skeleton h="160px" borderRadius="md" />
           </Box>
-        ) : recentOrders.length === 0 ? (
+        ) : recent.length === 0 ? (
           <EmptyState
-            title="Sin pedidos aún"
-            message="Haz tu primer pedido y aparecerá aquí."
-            action={
-              <Button
-                size="sm"
-                bg="brand.solid"
-                color="white"
-                _hover={{ bg: "brand.600" }}
-                onClick={() => navigate("/cliente/nuevo")}
-              >
-                Hacer primer pedido
-              </Button>
-            }
+            title="Sin pedidos"
+            message="No hay pedidos registrados aún."
           />
         ) : (
           <Table.Root size="sm">
             <Table.Header>
               <Table.Row bg="bg.subtle">
-                {["Nº pedido", "Fecha", "Estado", "Total"].map((h) => (
-                  <Table.ColumnHeader
-                    key={h}
-                    color="text.secondary"
-                    fontSize="xs"
-                    fontWeight={600}
-                    textTransform="uppercase"
-                    letterSpacing="wider"
-                    py={3}
-                    px={4}
-                  >
-                    {h}
-                  </Table.ColumnHeader>
-                ))}
+                {["Nº pedido", "Cliente", "Fecha", "Estado", "Total"].map(
+                  (h) => (
+                    <Table.ColumnHeader
+                      key={h}
+                      color="text.secondary"
+                      fontSize="xs"
+                      fontWeight={600}
+                      textTransform="uppercase"
+                      letterSpacing="wider"
+                      py={3}
+                      px={4}
+                    >
+                      {h}
+                    </Table.ColumnHeader>
+                  ),
+                )}
               </Table.Row>
             </Table.Header>
 
             <Table.Body>
-              {recentOrders.map((order) => (
+              {recent.map((o) => (
                 <Table.Row
-                  key={order.id}
+                  key={o.id}
                   _hover={{ bg: "bg.subtle" }}
                   cursor="pointer"
-                  onClick={() => navigate("/cliente/pedidos")}
+                  onClick={() => navigate("/empleado/pedidos")}
                 >
                   <Table.Cell px={4} py={3}>
                     <Text
@@ -173,23 +157,29 @@ export default function DashboardPage() {
                       color="brand.text"
                       fontWeight={600}
                     >
-                      {fmtOrderId(order.id)}
+                      #{fmtOrderId(o.id)}
                     </Text>
                   </Table.Cell>
-
                   <Table.Cell px={4} py={3}>
-                    <Text fontSize="sm" color="text.secondary">
-                      {fmtDate(order.created_at)}
+                    <Text fontSize="sm" color="text.primary">
+                      {o.client_name}
                     </Text>
                   </Table.Cell>
-
                   <Table.Cell px={4} py={3}>
-                    <StatusBadge status={order.status} />
+                    <Text
+                      fontSize="sm"
+                      color="text.secondary"
+                      whiteSpace="nowrap"
+                    >
+                      {fmtDate(o.created_at)}
+                    </Text>
                   </Table.Cell>
-
+                  <Table.Cell px={4} py={3}>
+                    <StatusBadge status={o.status} />
+                  </Table.Cell>
                   <Table.Cell px={4} py={3}>
                     <Text fontSize="sm" fontWeight={700} color="text.primary">
-                      {fmtPrice(order.total)}
+                      {fmtPrice(o.total)}
                     </Text>
                   </Table.Cell>
                 </Table.Row>
