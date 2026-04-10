@@ -5,10 +5,12 @@ import {
   Dialog,
   Field,
   Flex,
+  Grid,
   Icon,
   Input,
   NativeSelect,
   Portal,
+  Separator,
   Skeleton,
   Switch,
   Table,
@@ -198,7 +200,7 @@ function ProductFormDialog({ open, onClose, onSave, categories, initial }) {
                   bg="brand.solid"
                   color="white"
                   _hover={{ bg: "brand.600" }}
-                  isLoaded={!loading}
+                  loading={loading}
                   loadingText="Guardando…"
                   onClick={handleSubmit}
                 >
@@ -213,7 +215,136 @@ function ProductFormDialog({ open, onClose, onSave, categories, initial }) {
   );
 }
 
-// ── Página principal de productos
+// ── Card móvil/tablet de producto
+function ProductCard({ product: p, onEdit, onDelete }) {
+  return (
+    <Box
+      bg="bg.surface"
+      border="1px solid"
+      borderColor="border.default"
+      borderRadius="xl"
+      overflow="hidden"
+      cursor="pointer"
+      _hover={{
+        borderColor: "brand.solid",
+        boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
+      }}
+      transition="all 0.2s"
+      onClick={() => onEdit(p)}
+    >
+      {/* Cabecera: icono + nombre + badge estado */}
+      <Flex
+        align="center"
+        gap={3}
+        px={4}
+        py={3}
+        bg="bg.subtle"
+        borderBottom="1px solid"
+        borderColor="border.default"
+      >
+        <Text fontSize="xl" lineHeight={1} flexShrink={0}>
+          {getCategoryIcon(p.category)}
+        </Text>
+        <Box flex={1} minW={0}>
+          <Text
+            fontSize="sm"
+            fontWeight={700}
+            color="text.primary"
+            lineClamp={1}
+          >
+            {p.name}
+          </Text>
+          {p.description && (
+            <Text fontSize="xs" color="text.muted" lineClamp={1} mt={0.5}>
+              {p.description}
+            </Text>
+          )}
+        </Box>
+        <Badge
+          size="xs"
+          colorPalette={p.is_active ? "green" : "red"}
+          variant="subtle"
+          borderRadius="full"
+          flexShrink={0}
+        >
+          {p.is_active ? "Activo" : "Inactivo"}
+        </Badge>
+      </Flex>
+
+      {/* Cuerpo: categoría + precio en dos columnas */}
+      <Grid templateColumns="1fr 1fr" px={4} py={3} gap={2}>
+        <Box>
+          <Text
+            fontSize="xs"
+            color="text.muted"
+            fontWeight={600}
+            textTransform="uppercase"
+            letterSpacing="wider"
+            mb={1}
+          >
+            Categoría
+          </Text>
+          <Text fontSize="sm" color="text.secondary" fontWeight={500}>
+            {p.category ?? "—"}
+          </Text>
+        </Box>
+        <Box textAlign="right">
+          <Text
+            fontSize="xs"
+            color="text.muted"
+            fontWeight={600}
+            textTransform="uppercase"
+            letterSpacing="wider"
+            mb={1}
+          >
+            Precio
+          </Text>
+          <Text fontSize="md" fontWeight={800} color="brand.solid">
+            {fmtPriceWithUnit(p.price, p.unit)}
+          </Text>
+        </Box>
+      </Grid>
+
+      <Separator />
+
+      {/* Acciones — siempre visibles */}
+      <Flex gap={2} px={4} py={3}>
+        <Button
+          flex={1}
+          size="sm"
+          variant="outline"
+          borderColor="border.strong"
+          color="text.secondary"
+          fontWeight={600}
+          _hover={{ borderColor: "brand.solid", color: "brand.text" }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit(p);
+          }}
+        >
+          <Icon as={LuPencil} boxSize={3.5} /> Editar
+        </Button>
+        <Button
+          flex={1}
+          size="sm"
+          variant="outline"
+          borderColor="red.200"
+          color="red.400"
+          fontWeight={600}
+          _hover={{ bg: "red.50", _dark: { bg: "red.900" } }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(p);
+          }}
+        >
+          <Icon as={LuTrash2} boxSize={3.5} /> Eliminar
+        </Button>
+      </Flex>
+    </Box>
+  );
+}
+
+// ── Página principal
 export default function AdminProductsPage() {
   const { products, loading, createProduct, updateProduct, removeProduct } =
     useProducts();
@@ -280,7 +411,51 @@ export default function AdminProductsPage() {
         mb={5}
       />
 
+      {/* ── MÓVIL: cards */}
+      <Box display={{ base: "block", md: "none" }}>
+        {loading ? (
+          <VStack gap={3}>
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} h="148px" borderRadius="lg" w="full" />
+            ))}
+          </VStack>
+        ) : filtered.length === 0 ? (
+          <EmptyState
+            icon={LuPackage}
+            title="Sin productos"
+            message="Crea el primer producto."
+            action={
+              <Button
+                size="sm"
+                bg="brand.solid"
+                color="white"
+                _hover={{ bg: "brand.600" }}
+                onClick={() => {
+                  setEditing(null);
+                  setFormOpen(true);
+                }}
+              >
+                Nuevo producto
+              </Button>
+            }
+          />
+        ) : (
+          <Grid templateColumns={{ base: "1fr", sm: "repeat(2, 1fr)" }} gap={3}>
+            {filtered.map((p) => (
+              <ProductCard
+                key={p.id}
+                product={p}
+                onEdit={openEdit}
+                onDelete={setDeleting}
+              />
+            ))}
+          </Grid>
+        )}
+      </Box>
+
+      {/* ── DESKTOP: tabla */}
       <Box
+        display={{ base: "none", md: "block" }}
         bg="bg.surface"
         border="1px solid"
         borderColor="border.default"

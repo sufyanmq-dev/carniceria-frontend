@@ -16,6 +16,43 @@ import EmptyState from "@/components/ui/EmptyState";
 import { useOrders } from "@/hooks/useOrders";
 import { fmtPrice, fmtDate, fmtOrderId } from "@/utils/formatters";
 
+// ── Fila compacta para el resumen del dashboard en móvil
+function DashboardOrderRow({ order, onClick }) {
+  return (
+    <Box
+      px={4}
+      py={3}
+      borderBottom="1px solid"
+      borderColor="border.default"
+      cursor="pointer"
+      _hover={{ bg: "bg.subtle" }}
+      transition="background 0.15s"
+      onClick={onClick}
+      _last={{ borderBottom: "none" }}
+    >
+      <Flex justify="space-between" align="center" mb={1}>
+        <Text fontSize="sm" fontWeight={600} color="text.primary" lineClamp={1}>
+          {order.client_name}
+        </Text>
+        <StatusBadge status={order.status} size="xs" />
+      </Flex>
+      <Flex justify="space-between" align="center">
+        <Text
+          fontSize="xs"
+          fontFamily="mono"
+          color="brand.text"
+          fontWeight={600}
+        >
+          {fmtOrderId(order.id)}
+        </Text>
+        <Text fontSize="sm" fontWeight={700} color="text.primary">
+          {fmtPrice(order.total)}
+        </Text>
+      </Flex>
+    </Box>
+  );
+}
+
 export default function EmployeeDashboardPage() {
   const navigate = useNavigate();
   const { orders, loading } = useOrders();
@@ -120,72 +157,91 @@ export default function EmployeeDashboardPage() {
             message="No hay pedidos registrados aún."
           />
         ) : (
-          <Table.Root size="sm">
-            <Table.Header>
-              <Table.Row bg="bg.subtle">
-                {["Nº pedido", "Cliente", "Fecha", "Estado", "Total"].map(
-                  (h) => (
-                    <Table.ColumnHeader
-                      key={h}
-                      color="text.secondary"
-                      fontSize="xs"
-                      fontWeight={600}
-                      textTransform="uppercase"
-                      letterSpacing="wider"
-                      py={3}
-                      px={4}
-                    >
-                      {h}
-                    </Table.ColumnHeader>
-                  ),
-                )}
-              </Table.Row>
-            </Table.Header>
-
-            <Table.Body>
+          <>
+            {/* MÓVIL: lista compacta */}
+            <Box display={{ base: "block", md: "none" }}>
               {recent.map((o) => (
-                <Table.Row
+                <DashboardOrderRow
                   key={o.id}
-                  _hover={{ bg: "bg.subtle" }}
-                  cursor="pointer"
+                  order={o}
                   onClick={() => navigate("/empleado/pedidos")}
-                >
-                  <Table.Cell px={4} py={3}>
-                    <Text
-                      fontSize="xs"
-                      fontFamily="mono"
-                      color="brand.text"
-                      fontWeight={600}
-                    >
-                      #{fmtOrderId(o.id)}
-                    </Text>
-                  </Table.Cell>
-                  <Table.Cell px={4} py={3}>
-                    <Text fontSize="sm" color="text.primary">
-                      {o.client_name}
-                    </Text>
-                  </Table.Cell>
-                  <Table.Cell px={4} py={3}>
-                    <Text
-                      fontSize="sm"
-                      color="text.secondary"
-                      whiteSpace="nowrap"
-                    >
-                      {fmtDate(o.created_at)}
-                    </Text>
-                  </Table.Cell>
-                  <Table.Cell px={4} py={3}>
-                    <StatusBadge status={o.status} />
-                  </Table.Cell>
-                  <Table.Cell px={4} py={3}>
-                    <Text fontSize="sm" fontWeight={700} color="text.primary">
-                      {fmtPrice(o.total)}
-                    </Text>
-                  </Table.Cell>
-                </Table.Row>
+                />
               ))}
-            </Table.Body>
-          </Table.Root>
+            </Box>
+
+            {/* DESKTOP: tabla */}
+            <Box display={{ base: "none", md: "block" }}>
+              <Table.Root size="sm">
+                <Table.Header>
+                  <Table.Row bg="bg.subtle">
+                    {["Nº pedido", "Cliente", "Fecha", "Estado", "Total"].map(
+                      (h) => (
+                        <Table.ColumnHeader
+                          key={h}
+                          color="text.secondary"
+                          fontSize="xs"
+                          fontWeight={600}
+                          textTransform="uppercase"
+                          letterSpacing="wider"
+                          py={3}
+                          px={4}
+                        >
+                          {h}
+                        </Table.ColumnHeader>
+                      ),
+                    )}
+                  </Table.Row>
+                </Table.Header>
+                <Table.Body>
+                  {recent.map((o) => (
+                    <Table.Row
+                      key={o.id}
+                      _hover={{ bg: "bg.subtle" }}
+                      cursor="pointer"
+                      onClick={() => navigate("/empleado/pedidos")}
+                    >
+                      <Table.Cell px={4} py={3}>
+                        <Text
+                          fontSize="xs"
+                          fontFamily="mono"
+                          color="brand.text"
+                          fontWeight={600}
+                        >
+                          {fmtOrderId(o.id)}
+                        </Text>
+                      </Table.Cell>
+                      <Table.Cell px={4} py={3}>
+                        <Text fontSize="sm" color="text.primary">
+                          {o.client_name}
+                        </Text>
+                      </Table.Cell>
+                      <Table.Cell px={4} py={3}>
+                        <Text
+                          fontSize="sm"
+                          color="text.secondary"
+                          whiteSpace="nowrap"
+                        >
+                          {fmtDate(o.created_at)}
+                        </Text>
+                      </Table.Cell>
+                      <Table.Cell px={4} py={3}>
+                        <StatusBadge status={o.status} />
+                      </Table.Cell>
+                      <Table.Cell px={4} py={3}>
+                        <Text
+                          fontSize="sm"
+                          fontWeight={700}
+                          color="text.primary"
+                        >
+                          {fmtPrice(o.total)}
+                        </Text>
+                      </Table.Cell>
+                    </Table.Row>
+                  ))}
+                </Table.Body>
+              </Table.Root>
+            </Box>
+          </>
         )}
       </Box>
     </Box>

@@ -3,9 +3,12 @@ import {
   Box,
   Button,
   Flex,
+  Grid,
+  Separator,
   Skeleton,
   Table,
   Text,
+  VStack,
 } from "@chakra-ui/react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -25,6 +28,107 @@ const FILTERS = [
   { label: "Entregado", value: "entregado" },
   { label: "Cancelado", value: "cancelado" },
 ];
+
+// ── Card para móvil y tablet
+function OrderCard({ order, onView }) {
+  return (
+    <Box
+      bg="bg.surface"
+      border="1px solid"
+      borderColor="border.default"
+      borderRadius="xl"
+      overflow="hidden"
+      _hover={{
+        borderColor: "brand.solid",
+        boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
+      }}
+      transition="all 0.2s"
+      cursor="pointer"
+      onClick={() => onView(order.id)}
+    >
+      {/* Cabecera: nº pedido + estado */}
+      <Flex
+        justify="space-between"
+        align="center"
+        px={4}
+        py={3}
+        bg="bg.subtle"
+        borderBottom="1px solid"
+        borderColor="border.default"
+      >
+        <Text
+          fontSize="xs"
+          fontFamily="mono"
+          fontWeight={700}
+          color="brand.text"
+          letterSpacing="wide"
+        >
+          {fmtOrderId(order.id)}
+        </Text>
+        <StatusBadge status={order.status} />
+      </Flex>
+
+      {/* Cuerpo: fecha + total en dos columnas */}
+      <Grid templateColumns="1fr 1fr" px={4} py={3} gap={2}>
+        <Box>
+          <Text
+            fontSize="xs"
+            color="text.muted"
+            fontWeight={600}
+            textTransform="uppercase"
+            letterSpacing="wider"
+            mb={1}
+          >
+            Fecha
+          </Text>
+          <Text fontSize="sm" color="text.secondary" fontWeight={500}>
+            {fmtDate(order.created_at)}
+          </Text>
+        </Box>
+        <Box textAlign="right">
+          <Text
+            fontSize="xs"
+            color="text.muted"
+            fontWeight={600}
+            textTransform="uppercase"
+            letterSpacing="wider"
+            mb={1}
+          >
+            Total
+          </Text>
+          <Text fontSize="md" fontWeight={800} color="text.primary">
+            {fmtPrice(order.total)}
+          </Text>
+        </Box>
+      </Grid>
+
+      <Separator />
+
+      {/* Botón acción */}
+      <Box px={4} py={3}>
+        <Button
+          w="full"
+          size="sm"
+          variant="outline"
+          borderColor="border.strong"
+          color="text.secondary"
+          fontWeight={600}
+          _hover={{
+            bg: "brand.subtle",
+            borderColor: "brand.solid",
+            color: "brand.text",
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onView(order.id);
+          }}
+        >
+          Ver Detalles
+        </Button>
+      </Box>
+    </Box>
+  );
+}
 
 export default function OrdersPage() {
   const navigate = useNavigate();
@@ -93,7 +197,49 @@ export default function OrdersPage() {
         })}
       </Flex>
 
+      {/* ── MÓVIL: cards */}
+      <Box display={{ base: "block", md: "none" }}>
+        {loading ? (
+          <VStack gap={3}>
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} h="140px" borderRadius="lg" w="full" />
+            ))}
+          </VStack>
+        ) : filtered.length === 0 ? (
+          <EmptyState
+            icon={LuClipboardList}
+            title="Sin pedidos"
+            message={
+              filter === "all"
+                ? "Aún no has realizado ningún pedido."
+                : "No tienes pedidos en este estado."
+            }
+            action={
+              filter === "all" && (
+                <Button
+                  size="sm"
+                  bg="brand.solid"
+                  color="white"
+                  _hover={{ bg: "brand.600" }}
+                  onClick={() => navigate("/cliente/nuevo")}
+                >
+                  Hacer primer pedido
+                </Button>
+              )
+            }
+          />
+        ) : (
+          <Grid templateColumns={{ base: "1fr", sm: "repeat(2, 1fr)" }} gap={3}>
+            {filtered.map((order) => (
+              <OrderCard key={order.id} order={order} onView={setViewId} />
+            ))}
+          </Grid>
+        )}
+      </Box>
+
+      {/* ── DESKTOP: tabla */}
       <Box
+        display={{ base: "none", md: "block" }}
         bg="bg.surface"
         border="1px solid"
         borderColor="border.default"
@@ -113,7 +259,7 @@ export default function OrdersPage() {
             message={
               filter === "all"
                 ? "Aún no has realizado ningún pedido."
-                : `No tienes pedidos en este estado.`
+                : "No tienes pedidos en este estado."
             }
             action={
               filter === "all" && (

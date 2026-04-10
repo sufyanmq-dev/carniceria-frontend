@@ -4,9 +4,11 @@ import {
   Dialog,
   Field,
   Flex,
+  Grid,
   Icon,
   Input,
   Portal,
+  Separator,
   Skeleton,
   Table,
   Text,
@@ -120,7 +122,7 @@ function CategoryFormDialog({ open, onClose, onSave, initial }) {
                   bg="brand.solid"
                   color="white"
                   _hover={{ bg: "brand.600" }}
-                  isLoaded={!loading}
+                  loading={loading}
                   loadingText="Guardando…"
                   onClick={handleSubmit}
                 >
@@ -135,7 +137,102 @@ function CategoryFormDialog({ open, onClose, onSave, initial }) {
   );
 }
 
-// Página admin categorías
+// ── Card móvil/tablet de categoría
+function CategoryRow({ category: c, onEdit, onDelete }) {
+  return (
+    <Box
+      bg="bg.surface"
+      border="1px solid"
+      borderColor="border.default"
+      borderRadius="xl"
+      overflow="hidden"
+      cursor="pointer"
+      _hover={{
+        borderColor: "brand.solid",
+        boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
+      }}
+      transition="all 0.2s"
+      onClick={() => onEdit(c)}
+    >
+      {/* Cabecera: nombre */}
+      <Flex
+        align="center"
+        px={4}
+        py={3}
+        bg="bg.subtle"
+        borderBottom="1px solid"
+        borderColor="border.default"
+        gap={2}
+      >
+        <Icon as={LuTag} boxSize={4} color="brand.text" flexShrink={0} />
+        <Text fontSize="sm" fontWeight={700} color="text.primary" lineClamp={1}>
+          {c.name}
+        </Text>
+      </Flex>
+
+      {/* Cuerpo: descripción */}
+      <Box px={4} py={3}>
+        <Text
+          fontSize="xs"
+          color="text.muted"
+          fontWeight={600}
+          textTransform="uppercase"
+          letterSpacing="wider"
+          mb={1}
+        >
+          Descripción
+        </Text>
+        <Text
+          fontSize="sm"
+          color="text.secondary"
+          fontWeight={500}
+          lineClamp={2}
+          minH="20px"
+        >
+          {c.description ?? "—"}
+        </Text>
+      </Box>
+
+      <Separator />
+
+      {/* Acciones */}
+      <Flex gap={2} px={4} py={3}>
+        <Button
+          flex={1}
+          size="sm"
+          variant="outline"
+          borderColor="border.strong"
+          color="text.secondary"
+          fontWeight={600}
+          _hover={{ borderColor: "brand.solid", color: "brand.text" }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onEdit(c);
+          }}
+        >
+          <Icon as={LuPencil} boxSize={3.5} /> Editar
+        </Button>
+        <Button
+          flex={1}
+          size="sm"
+          variant="outline"
+          borderColor="red.200"
+          color="red.400"
+          fontWeight={600}
+          _hover={{ bg: "red.50", _dark: { bg: "red.900" } }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(c);
+          }}
+        >
+          <Icon as={LuTrash2} boxSize={3.5} /> Eliminar
+        </Button>
+      </Flex>
+    </Box>
+  );
+}
+
+// ── Página
 export default function AdminCategoriesPage() {
   const {
     categories,
@@ -168,26 +265,59 @@ export default function AdminCategoriesPage() {
     setFormOpen(true);
   };
 
+  const newBtn = (
+    <Button
+      size="sm"
+      bg="brand.solid"
+      color="white"
+      _hover={{ bg: "brand.600" }}
+      fontWeight={600}
+      onClick={openCreate}
+    >
+      <Icon as={LuPlus} boxSize={4} /> Nueva categoría
+    </Button>
+  );
+
   return (
     <Box>
       <PageHeader
         title="Categorías"
         subtitle={`${categories.length} categorías`}
-        action={
-          <Button
-            size="sm"
-            bg="brand.solid"
-            color="white"
-            _hover={{ bg: "brand.600" }}
-            fontWeight={600}
-            onClick={openCreate}
-          >
-            <Icon as={LuPlus} boxSize={4} /> Nueva categoría
-          </Button>
-        }
+        action={newBtn}
       />
 
+      {/* ── MÓVIL: lista de rows */}
+      <Box display={{ base: "block", md: "none" }}>
+        {loading ? (
+          <VStack gap={3}>
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} h="68px" borderRadius="lg" w="full" />
+            ))}
+          </VStack>
+        ) : categories.length === 0 ? (
+          <EmptyState
+            icon={LuTag}
+            title="Sin categorías"
+            message="Crea la primera categoría."
+            action={newBtn}
+          />
+        ) : (
+          <Grid templateColumns={{ base: "1fr", sm: "repeat(2, 1fr)" }} gap={3}>
+            {categories.map((c) => (
+              <CategoryRow
+                key={c.id}
+                category={c}
+                onEdit={openEdit}
+                onDelete={setDeleting}
+              />
+            ))}
+          </Grid>
+        )}
+      </Box>
+
+      {/* ── DESKTOP: tabla */}
       <Box
+        display={{ base: "none", md: "block" }}
         bg="bg.surface"
         border="1px solid"
         borderColor="border.default"
@@ -202,18 +332,8 @@ export default function AdminCategoriesPage() {
           <EmptyState
             icon={LuTag}
             title="Sin categorías"
-            message="Crea la primera categoría para organizar tus productos."
-            action={
-              <Button
-                size="sm"
-                bg="brand.solid"
-                color="white"
-                _hover={{ bg: "brand.600" }}
-                onClick={openCreate}
-              >
-                Nueva categoría
-              </Button>
-            }
+            message="Crea la primera categoría."
+            action={newBtn}
           />
         ) : (
           <Table.Root size="sm">

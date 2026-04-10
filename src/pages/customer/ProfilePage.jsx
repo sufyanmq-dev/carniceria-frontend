@@ -128,7 +128,7 @@ export default function ProfilePage() {
       />
 
       {/* Avatar + info básica */}
-      <Skeleton isLoaded={!loading} borderRadius="lg" mb={5}>
+      <Skeleton loading={loading} borderRadius="lg" mb={5}>
         <Flex
           align="center"
           gap={4}
@@ -171,7 +171,7 @@ export default function ProfilePage() {
       </Skeleton>
 
       {/* Formulario */}
-      <Skeleton isLoaded={!loading} borderRadius="lg">
+      <Skeleton loading={loading} borderRadius="lg">
         <Box
           bg="bg.surface"
           border="1px solid"

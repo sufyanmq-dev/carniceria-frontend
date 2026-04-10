@@ -321,7 +321,7 @@ export default function RegisterPage() {
                   color="white"
                   _hover={{ bg: "brand.600" }}
                   _active={{ bg: "brand.700" }}
-                  isLoaded={!loading}
+                  loading={loading}
                   loadingText="Creando cuenta…"
                   size="md"
                   fontWeight={600}

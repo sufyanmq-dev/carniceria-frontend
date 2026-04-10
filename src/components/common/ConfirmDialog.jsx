@@ -79,7 +79,7 @@ export default function ConfirmDialog({
                   bg="red.500"
                   color="white"
                   _hover={{ bg: "red.600" }}
-                  isLoaded={!loading}
+                  loading={loading}
                   loadingText="Eliminando…"
                   onClick={onConfirm}
                 >

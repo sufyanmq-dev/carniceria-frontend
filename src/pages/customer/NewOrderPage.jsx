@@ -340,7 +340,7 @@ function ConfirmStep({
               color="white"
               _hover={{ bg: "brand.600" }}
               fontWeight={600}
-              isLoaded={!loading}
+              loading={loading}
               onClick={() => onConfirm(notes)}
             >
               Confirmar pedido

@@ -176,7 +176,7 @@ export default function LoginPage() {
                 color="white"
                 _hover={{ bg: "brand.600" }}
                 _active={{ bg: "brand.700" }}
-                isLoaded={!loading}
+                loading={loading}
                 loadingText="Iniciando sesión…"
                 size="md"
                 fontWeight={600}

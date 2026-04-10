@@ -20,6 +20,39 @@ import StatCard from "@/components/ui/StatCard";
 import StatusBadge from "@/components/ui/StatusBadge";
 import EmptyState from "@/components/ui/EmptyState";
 
+// ── Fila compacta para el resumen del dashboard en móvil
+function DashboardOrderRow({ order }) {
+  return (
+    <Box
+      px={4}
+      py={3}
+      borderBottom="1px solid"
+      borderColor="border.default"
+      _last={{ borderBottom: "none" }}
+    >
+      <Flex justify="space-between" align="center" mb={1}>
+        <Text fontSize="sm" fontWeight={600} color="text.primary" lineClamp={1}>
+          {order.client_name}
+        </Text>
+        <StatusBadge status={order.status} size="xs" />
+      </Flex>
+      <Flex justify="space-between" align="center">
+        <Text
+          fontSize="xs"
+          fontFamily="mono"
+          color="brand.text"
+          fontWeight={600}
+        >
+          {fmtOrderId(order.id)}
+        </Text>
+        <Text fontSize="sm" fontWeight={700} color="text.primary">
+          {fmtPrice(order.total)}
+        </Text>
+      </Flex>
+    </Box>
+  );
+}
+
 export default function AdminDashboardPage() {
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
@@ -54,27 +87,27 @@ export default function AdminDashboardPage() {
         subtitle="Resumen global del sistema"
       />
 
-      {/* ── Estadísticas principales */}
+      {/* Estadísticas */}
       <Grid
         templateColumns={{ base: "repeat(2, 1fr)", md: "repeat(4, 1fr)" }}
         gap={4}
         mb={8}
       >
-        <Skeleton isLoaded={!loading} borderRadius="lg">
+        <Skeleton loading={loading} borderRadius="lg">
           <StatCard
             label="Ingresos totales"
             value={fmtPrice(totalRevenue)}
             icon={LuEuro}
           />
         </Skeleton>
-        <Skeleton isLoaded={!loading} borderRadius="lg">
+        <Skeleton loading={loading} borderRadius="lg">
           <StatCard
             label="Pedidos"
             value={orders.length}
             icon={LuClipboardList}
           />
         </Skeleton>
-        <Skeleton isLoaded={!loading} borderRadius="lg">
+        <Skeleton loading={loading} borderRadius="lg">
           <StatCard
             label="Productos"
             value={products.length}
@@ -82,7 +115,7 @@ export default function AdminDashboardPage() {
             icon={LuPackage}
           />
         </Skeleton>
-        <Skeleton isLoaded={!loading} borderRadius="lg">
+        <Skeleton loading={loading} borderRadius="lg">
           <StatCard
             label="Usuarios"
             value={users.length}
@@ -108,12 +141,14 @@ export default function AdminDashboardPage() {
           borderBottom="1px solid"
           borderColor="border.default"
         >
-          <Text fontWeight={600} fontSize="sm">
+          <Text fontWeight={600} fontSize="sm" color="text.primary">
             Pedidos recientes
           </Text>
           <Button
             variant="ghost"
             size="xs"
+            color="brand.text"
+            fontWeight={600}
             onClick={() => navigate("/admin/pedidos")}
           >
             Ver todos →
@@ -122,35 +157,92 @@ export default function AdminDashboardPage() {
 
         {loading ? (
           <Box p={5}>
-            <Skeleton h="180px" />
+            <Skeleton h="160px" borderRadius="md" />
           </Box>
         ) : recentOrders.length === 0 ? (
           <EmptyState title="Sin pedidos" message="No hay pedidos aún." />
         ) : (
-          <Table.Root size="sm">
-            <Table.Header>
-              <Table.Row>
-                {["Nº pedido", "Cliente", "Fecha", "Estado", "Total"].map(
-                  (h) => (
-                    <Table.ColumnHeader key={h}>{h}</Table.ColumnHeader>
-                  ),
-                )}
-              </Table.Row>
-            </Table.Header>
-            <Table.Body>
+          <>
+            {/* MÓVIL: lista compacta */}
+            <Box display={{ base: "block", md: "none" }}>
               {recentOrders.map((o) => (
-                <Table.Row key={o.id}>
-                  <Table.Cell>{fmtOrderId(o.id)}</Table.Cell>
-                  <Table.Cell>{o.client_name}</Table.Cell>
-                  <Table.Cell>{fmtDate(o.created_at)}</Table.Cell>
-                  <Table.Cell>
-                    <StatusBadge status={o.status} />
-                  </Table.Cell>
-                  <Table.Cell>{fmtPrice(o.total)}</Table.Cell>
-                </Table.Row>
+                <DashboardOrderRow key={o.id} order={o} />
               ))}
-            </Table.Body>
-          </Table.Root>
+            </Box>
+
+            {/* DESKTOP: tabla */}
+            <Box display={{ base: "none", md: "block" }}>
+              <Table.Root size="sm">
+                <Table.Header>
+                  <Table.Row>
+                    {["Nº pedido", "Cliente", "Fecha", "Estado", "Total"].map(
+                      (h) => (
+                        <Table.ColumnHeader
+                          key={h}
+                          color="text.secondary"
+                          fontSize="xs"
+                          fontWeight={600}
+                          textTransform="uppercase"
+                          letterSpacing="wider"
+                          py={3}
+                          px={4}
+                        >
+                          {h}
+                        </Table.ColumnHeader>
+                      ),
+                    )}
+                  </Table.Row>
+                </Table.Header>
+                <Table.Body>
+                  {recentOrders.map((o) => (
+                    <Table.Row
+                      key={o.id}
+                      _hover={{ bg: "bg.subtle" }}
+                      cursor="pointer"
+                      onClick={() => navigate("/admin/pedidos")}
+                    >
+                      <Table.Cell px={4} py={3}>
+                        <Text
+                          fontSize="xs"
+                          fontFamily="mono"
+                          color="brand.text"
+                          fontWeight={600}
+                        >
+                          {fmtOrderId(o.id)}
+                        </Text>
+                      </Table.Cell>
+                      <Table.Cell px={4} py={3}>
+                        <Text fontSize="sm" color="text.primary">
+                          {o.client_name}
+                        </Text>
+                      </Table.Cell>
+                      <Table.Cell px={4} py={3}>
+                        <Text
+                          fontSize="sm"
+                          color="text.secondary"
+                          whiteSpace="nowrap"
+                        >
+                          {fmtDate(o.created_at)}
+                        </Text>
+                      </Table.Cell>
+                      <Table.Cell px={4} py={3}>
+                        <StatusBadge status={o.status} />
+                      </Table.Cell>
+                      <Table.Cell px={4} py={3}>
+                        <Text
+                          fontSize="sm"
+                          fontWeight={700}
+                          color="text.primary"
+                        >
+                          {fmtPrice(o.total)}
+                        </Text>
+                      </Table.Cell>
+                    </Table.Row>
+                  ))}
+                </Table.Body>
+              </Table.Root>
+            </Box>
+          </>
         )}
       </Box>
     </Box>
